@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Interview System - Register</title>
+
+    <style>
+        body{
+            margin:0;
+            padding:0;
+            font-family: Arial, sans-serif;
+            background:#f4f6f9;
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+
+        .container{
+            width:1000px;
+            background:white;
+            display:flex;
+            border-radius:15px;
+            box-shadow:0px 0px 20px rgba(0,0,0,0.2);
+            overflow:hidden;
+        }
+
+        .left{
+            width:55%;
+            padding:35px;
+        }
+
+        .left h1{
+            color:#2c3e50;
+            margin-bottom:20px;
+        }
+
+        .input-box{
+            width:100%;
+            padding:10px;
+            margin-top:5px;
+            margin-bottom:15px;
+            border:1px solid #ccc;
+            border-radius:8px;
+        }
+
+        .btn{
+            width:100%;
+            padding:12px;
+            background:#28a745;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        .btn:hover{
+            background:#1f7d34;
+        }
+
+        .right{
+            width:45%;
+            background:#eaf3ff;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+
+        .right img{
+            width:80%;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="left">
+
+        <h1>Create Account</h1>
+
+        <form method="POST">
+
+    <label>Name</label>
+    <input
+    type="text"
+    name="name" 
+    class="input-box" 
+    required
+    placeholder="Enter Full Name">
+
+    <label>Mobile Number</label>
+    <input 
+    type="text" 
+    name="mobile" 
+    class="input-box" 
+    required
+    placeholder="Enter Mobile Number">
+
+    <label>Email</label>
+    <input 
+    type="email" 
+    name="email" 
+    class="input-box" 
+    required 
+    placeholder="Enter Email">
+
+    <label>Age</label>
+    <input type="number"
+           name="age"
+           class="input-box"
+           placeholder="Enter Age"
+           min="18"
+           max="60"
+           required>
+
+    <label>Username</label>
+    <input 
+    type="text" 
+    name="username" 
+    class="input-box" 
+    required
+    placeholder="Create Username">
+
+    <label>Password</label>
+    <input 
+    type="password" 
+    name="password" 
+    class="input-box" 
+    required 
+    placeholder="Create Password">
+
+    <label>Confirm Password</label>
+    <input 
+    type="password" 
+    name="confirm_password" 
+    class="input-box" 
+    required 
+    placeholder="Confirm Password">
+
+    <button type="submit" class="btn">
+        Register
+    </button>
+
+</form>
+
+    </div>
+
+    <div class="right">
+        <img src="{{ url_for('static', filename='pic1.jpg') }}">
+    </div>
+
+</div>
+
+</body>
+</html>

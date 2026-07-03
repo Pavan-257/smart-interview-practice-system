@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analytics Dashboard</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            background:#f4f7fb;
+        }
+
+        .container{
+            width:90%;
+            max-width:1000px;
+            margin:40px auto;
+        }
+
+        .header{
+            background:#0d6efd;
+            color:white;
+            text-align:center;
+            padding:20px;
+            border-radius:12px;
+        }
+
+        .card{
+            background:white;
+            margin-top:25px;
+            padding:20px;
+            border-radius:12px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th,td{
+            padding:12px;
+            border-bottom:1px solid #ddd;
+            text-align:center;
+        }
+
+        th{
+            background:#0d6efd;
+            color:white;
+        }
+
+        .total{
+            font-size:28px;
+            color:#198754;
+            text-align:center;
+        }
+
+        .btn{
+            display:inline-block;
+            margin-top:20px;
+            padding:12px 25px;
+            background:#0d6efd;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
+        }
+
+        .center{
+            text-align:center;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Analytics Dashboard</h1>
+    </div>
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+
+    <div class="card" style="flex:1;">
+        <h3>Total Interviews</h3>
+        <div class="total">{{ total_interviews }}</div>
+    </div>
+
+    <div class="card" style="flex:1;">
+        <h3>Average Score</h3>
+        <div class="total">{{ average_score }}%</div>
+    </div>
+
+    <div class="card" style="flex:1;">
+        <h3>Highest Score</h3>
+        <div class="total">{{ highest_score }}%</div>
+    </div>
+
+    <div class="card" style="flex:1;">
+        <h3>Lowest Score</h3>
+        <div class="total">{{ lowest_score }}%</div>
+    </div>
+
+</div>
+
+    <div class="card">
+
+        <h2>Interview History</h2>
+
+        <table>
+
+            <tr>
+                <th>Interview Type</th>
+                <th>Score</th>
+                <th>Date</th>
+            </tr>
+
+            {% for row in results %}
+
+            <tr>
+                <td>{{ row["interview_type"] }}</td>
+                <td>{{ row["score"] }}</td>
+                <td>{{ row["interview_date"] }}</td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+<div class="card">
+
+    <h2>Interview Scores</h2>
+
+    <canvas id="scoreChart"></canvas>
+
+</div>
+
+    <div class="center">
+
+        <a href="/interview" class="btn">
+            Back
+        </a>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const ctx = document.getElementById("scoreChart");
+
+new Chart(ctx, {
+
+    type: "line",
+
+    data: {
+
+        labels: JSON.parse('{{ labels | tojson | safe }}'),
+
+        datasets: [{
+
+            label: "Interview Score",
+
+            data: JSON.parse('{{ chart_scores | tojson | safe }}'),
+
+            borderWidth: 3,
+
+            fill: false,
+
+            tension: 0.3
+
+        }]
+
+    },
+
+    options: {
+
+        responsive: true,
+
+        scales: {
+
+            y: {
+
+                beginAtZero: true,
+
+                max: 100
+
+            }
+
+        }
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>

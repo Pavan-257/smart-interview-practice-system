@@ -1,0 +1,588 @@
+from flask import Flask, render_template, request, redirect, session, send_file
+from werkzeug.security import generate_password_hash, check_password_hash
+from db import get_connection, create_table, save_result
+from question_bank import (
+    HR_QUESTIONS,
+    TECHNICAL_QUESTIONS,
+    APTITUDE_QUESTIONS
+)
+from session_data import interview_data
+from ai_evaluator import evaluate_answers
+from utils import generate_otp, send_otp
+from otp import otp_storage, forgot_password_otp
+from pdf_report import generate_pdf
+import random
+
+app = Flask(__name__)
+app.secret_key = "smart_interview_secret_key"
+
+create_table()
+
+@app.route("/", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+
+        email = request.form["email"]
+        password = request.form["password"]
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE email=?",
+            (email,)
+        )
+
+        user = cursor.fetchone()
+        print("User Found :", user)
+
+        if user:
+            print("Stored Hash :", user["password"])
+            print("Entered Password :", password)
+            print("Password Match :", check_password_hash(user["password"], password))
+        conn.close()
+
+        if user and check_password_hash(user["password"], password):
+            session["username"] = user["username"]
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT interview_type,
+                       score,
+                       interview_date
+                FROM interview_results
+                WHERE username=?
+                ORDER BY interview_date DESC
+            """, (user["username"],))
+
+            history = cursor.fetchall()
+
+            conn.close()
+
+            return render_template(
+                "dashboard.html",
+                name=user["name"],
+                history=history
+            )
+
+        return "Invalid Email or Password"
+
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        mobile = request.form["mobile"]
+        email = request.form["email"]
+        age = int(request.form["age"])
+        username = request.form["username"]
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+        print("\n===== REGISTER REQUEST =====")
+        print("Name     :", name)
+        print("Mobile   :", mobile)
+        print("Email    :", email)
+        print("Username :", username)
+        print("============================\n")
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE email=? OR username=?",
+            (email, username)
+        )
+
+        existing_user = cursor.fetchone()
+        print("Database result:", existing_user)
+        conn.close()
+
+        if existing_user:
+            return "Email or Username already exists."
+
+        if age < 18 or age > 60:
+            return "Age must be between 18 and 60"
+
+        if password != confirm_password:
+            return "Passwords do not match"
+        hashed_password = generate_password_hash(password)
+
+        otp = generate_otp()
+
+        otp_storage[email] = {
+            "otp": otp,
+            "user_data": {
+                "name": name,
+                "mobile": mobile,
+                "email": email,
+                "age": age,
+                "username": username,
+                "password": hashed_password
+            }
+        }
+
+        send_otp(email, otp)
+
+        session["otp_email"] = email
+
+        return redirect("/verify-otp")
+
+    return render_template("register.html")
+@app.route("/verify-otp", methods=["GET", "POST"])
+def verify_otp():
+
+    if request.method == "POST":
+
+        otp = request.form["otp"]
+
+        # Get the latest email stored
+        email = session.get("otp_email")
+
+        if not email:
+            return "OTP Session Expired. Please register again."
+
+        print("Entered OTP :", otp)
+        print("Stored OTP  :", otp_storage[email]["otp"])
+        print("Email       :", email)
+        if otp_storage[email]["otp"] == otp:
+
+            user = otp_storage[email]["user_data"]
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                INSERT INTO users
+                (name, mobile, email, age, username, password)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    user["name"],
+                    user["mobile"],
+                    user["email"],
+                    user["age"],
+                    user["username"],
+                    user["password"]
+                ))
+
+                conn.commit()
+
+            except Exception as e:
+                return str(e)
+
+            finally:
+                conn.close()
+
+            del otp_storage[email]
+
+            return redirect("/")
+
+        return "Invalid OTP"
+
+    return render_template("verify_otp.html")
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = request.form["email"]
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE email=?",
+            (email,)
+        )
+
+        user = cursor.fetchone()
+        conn.close()
+
+        if not user:
+            return "Email not registered."
+
+        otp = generate_otp()
+
+        forgot_password_otp[email] = otp
+
+        session["reset_email"] = email
+
+        send_otp(email, otp)
+
+        return redirect("/reset-password")
+
+    return render_template("forgot_password.html")
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+
+    if request.method == "POST":
+
+        otp = request.form["otp"]
+        password = request.form["password"]
+        confirm = request.form["confirm"]
+
+        if password != confirm:
+            return "Passwords do not match."
+
+        email = session.get("reset_email")
+
+        if not email:
+            return "Session expired."
+
+        print("Session Email :", email)
+        print("Entered OTP  :", otp)
+        print("Stored OTP   :", forgot_password_otp.get(email))
+
+        if forgot_password_otp.get(email) != otp:
+            return "Invalid OTP."
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        hashed_password = generate_password_hash(password)
+
+        cursor.execute(
+            "UPDATE users SET password=? WHERE email=?",
+            (hashed_password, email)
+        )
+
+        conn.commit()
+        conn.close()
+
+        del forgot_password_otp[email]
+        session.pop("reset_email", None)
+
+        return redirect("/")
+
+    return render_template("reset_password.html")
+@app.route("/interview")
+def interview():
+    return render_template("interview.html")
+
+@app.route("/hr-interview", methods=["GET", "POST"])
+def hr_interview():
+
+    user = session.get("username")
+    if not user:
+        return redirect("/")
+
+    if user not in interview_data:
+
+        questions = HR_QUESTIONS[1:]
+        random.shuffle(questions)
+
+        interview_data[user] = {
+            "questions": [HR_QUESTIONS[0]] + questions,
+            "current": 0,
+            "answers": []
+        }
+
+    data = interview_data[user]
+
+    if request.method == "POST":
+
+        answer = request.form["answer"]
+
+        data["answers"].append(answer)
+
+        data["current"] += 1
+
+        if data["current"] == len(data["questions"]):
+
+            result = evaluate_answers(
+                data["questions"],
+                data["answers"]
+            )
+
+            save_result(
+                user,
+                "HR Interview",
+                result["score"],
+                result["feedback"]
+            )
+            pdf_filename = f"reports/{user}_HR_Report.pdf"
+
+            generate_pdf(
+                pdf_filename,
+                user,
+                "HR Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            del interview_data[user]
+
+            return render_template(
+                "result.html",
+                score=result["score"],
+                feedback=result["feedback"]
+            )
+
+    return render_template(
+        "hr_interview.html",
+        question=data["questions"][data["current"]],
+        number=data["current"] + 1,
+        total=len(data["questions"])
+    )
+
+
+@app.route("/technical-interview", methods=["GET", "POST"])
+def technical_interview():
+
+    user = session.get("username")
+    if not user:
+        return redirect("/")
+
+    from session_data import technical_data
+
+    if user not in technical_data:
+
+        questions = TECHNICAL_QUESTIONS[:]
+        random.shuffle(questions)
+
+        technical_data[user] = {
+            "questions": questions,
+            "current": 0,
+            "answers": []
+        }
+
+    data = technical_data[user]
+
+    if request.method == "POST":
+
+        answer = request.form["answer"]
+
+        data["answers"].append(answer)
+
+        data["current"] += 1
+
+        if data["current"] >= len(data["questions"]):
+
+            result = evaluate_answers(
+                data["questions"],
+                data["answers"]
+            )
+
+            save_result(
+                user,
+                "Technical Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            pdf_filename = f"reports/{user}_Technical_Report.pdf"
+
+            generate_pdf(
+                pdf_filename,
+                user,
+                "Technical Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            session["last_report"] = pdf_filename
+
+            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
+
+            generate_pdf(
+                pdf_filename,
+                user,      
+                "Aptitude Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            session["last_report"] = pdf_filename
+
+            del technical_data[user]
+
+            return render_template(
+                "result.html",
+                score=result["score"],
+                feedback=result["feedback"]
+            )
+
+    return render_template(
+        "technical_interview.html",
+        question=data["questions"][data["current"]],
+        number=data["current"] + 1,
+        total=len(data["questions"])
+    )
+
+
+@app.route("/aptitude-interview", methods=["GET", "POST"])
+def aptitude_interview():
+
+    user = session.get("username")
+    if not user:
+        return redirect("/")
+
+    from session_data import aptitude_data
+
+    if user not in aptitude_data:
+
+        questions = APTITUDE_QUESTIONS[:]
+        random.shuffle(questions)
+
+        aptitude_data[user] = {
+            "questions": questions,
+            "current": 0,
+            "answers": []
+        }
+
+    data = aptitude_data[user]
+
+    if request.method == "POST":
+
+        answer = request.form["answer"]
+
+        data["answers"].append(answer)
+
+        data["current"] += 1
+
+        if data["current"] >= len(data["questions"]):
+
+            result = evaluate_answers(
+                data["questions"],
+                data["answers"]
+            )
+
+            save_result(
+                user,
+                "Aptitude Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
+
+            generate_pdf(
+                pdf_filename,
+                user,
+                "Aptitude Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            session["last_report"] = pdf_filename
+
+            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
+
+            generate_pdf(
+                pdf_filename,
+                user,
+                "Aptitude Interview",
+                result["score"],
+                result["feedback"]
+            )
+
+            session["last_report"] = pdf_filename
+
+            del aptitude_data[user]
+
+            return render_template(
+                "result.html",
+                score=result["score"],
+                feedback=result["feedback"]
+            )
+
+    return render_template(
+        "aptitude_interview.html",
+        question=data["questions"][data["current"]],
+        number=data["current"] + 1,
+        total=len(data["questions"])
+    )
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+@app.route("/download-report")
+def download_report():
+
+    user = session.get("username")
+
+    if not user:
+        return redirect("/")
+
+    filename = f"reports/{user}_HR_Report.pdf"
+
+    return send_file(
+        filename,
+        as_attachment=True
+    )
+
+@app.route("/analytics")
+def analytics():
+
+    user = session.get("username")
+
+    if not user:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT interview_type,
+               score,
+               interview_date
+        FROM interview_results
+        WHERE username=?
+        ORDER BY interview_date DESC
+    """, (user,))
+
+    results = cursor.fetchall()
+
+    scores = []
+
+    for row in results:
+        try:
+            score = int(str(row["score"]).replace("%", "").strip())
+            scores.append(score)
+        except:
+            pass
+
+    total_interviews = len(results)
+
+    average_score = round(sum(scores)/len(scores),2) if scores else 0
+
+    highest_score = max(scores) if scores else 0
+
+    lowest_score = min(scores) if scores else 0
+
+    conn.close()
+
+    labels = []
+    chart_scores = []
+
+    for row in results:
+        labels.append(row["interview_type"])
+
+    try:
+        chart_scores.append(
+            int(str(row["score"]).replace("%", "").strip())
+        )
+    except:
+        chart_scores.append(0)
+
+    return render_template(
+        "analytics.html",
+        results=results,
+        total_interviews=total_interviews,
+        average_score=average_score,
+        highest_score=highest_score,
+        lowest_score=lowest_score,
+        labels=labels,
+        chart_scores=chart_scores
+    )
+
+if __name__ == "__main__":
+    create_table()
+    app.run(host="0.0.0.0", port=5000, debug=True)

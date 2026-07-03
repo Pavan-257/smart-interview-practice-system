@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Interview System - Login</title>
+
+    <style>
+        body{
+            margin:0;
+            padding:0;
+            font-family: Arial, sans-serif;
+            background:#f4f6f9;
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+
+        .container{
+            width:900px;
+            background:white;
+            display:flex;
+            border-radius:15px;
+            box-shadow:0px 0px 20px rgba(0,0,0,0.2);
+            overflow:hidden;
+        }
+
+        .left{
+            width:50%;
+            padding:40px;
+        }
+
+        .left h1{
+            color:#2c3e50;
+            margin-bottom:30px;
+        }
+
+        .input-box{
+            width:100%;
+            padding:12px;
+            margin-top:8px;
+            margin-bottom:20px;
+            border:1px solid #ccc;
+            border-radius:8px;
+            font-size:15px;
+        }
+
+        .btn{
+            width:100%;
+            padding:12px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            cursor:pointer;
+        }
+
+        .btn:hover{
+            background:#0056b3;
+        }
+
+        .register-link{
+            text-align:center;
+            margin-top:20px;
+        }
+
+        .register-link a{
+            text-decoration:none;
+            color:#007bff;
+            font-weight:bold;
+        }
+
+        .right{
+            width:50%;
+            background:#eaf3ff;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+
+        .right img{
+    width:60%;
+}
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="left" style="padding-right:60px;">
+
+        <h1>Login</h1>
+
+        <form method="POST">
+
+    <label>Email</label>
+    <input type="text"
+       name="email"
+       class="input-box"
+       placeholder="Enter Email">
+
+    <label>Password</label>
+    <input type="password"
+       name="password"
+       class="input-box"
+       placeholder="Enter Password">
+
+    <div style="text-align:right; margin-bottom:15px;">
+        <a href="/forgot-password">
+        Forgot Password?
+        </a>
+    </div>
+
+    <button type="submit" class="btn">
+        Login
+    </button>
+
+</form>
+
+        <div class="register-link">
+            <a href="/register">Create New Account</a>
+        </div>
+
+    </div>
+
+    <div class="right">
+    <img src="{{ url_for('static', filename='pic1.jpg') }}" style="width:70%;">
+    </div>
+
+</div>
+
+</body>
+</html>

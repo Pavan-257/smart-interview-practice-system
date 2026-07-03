@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Smart Interview Practice System</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial;
+            background:#f4f6f9;
+        }
+
+        .header{
+            background:#007bff;
+            color:white;
+            padding:20px;
+            text-align:center;
+        }
+
+        .container{
+            width:90%;
+            margin:auto;
+            margin-top:30px;
+        }
+
+        .welcome{
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:0 0 10px lightgray;
+        }
+
+        .cards{
+            display:flex;
+            justify-content:space-between;
+            margin-top:30px;
+        }
+
+        .card{
+            width:30%;
+            background:white;
+            text-align:center;
+            padding:30px;
+            border-radius:10px;
+            box-shadow:0 0 10px lightgray;
+        }
+
+        .card h2{
+            color:#007bff;
+        }
+
+        .card a{
+            text-decoration:none;
+        }
+
+        .btn{
+            display:inline-block;
+            margin-top:20px;
+            background:#007bff;
+            color:white;
+            padding:12px 25px;
+            border-radius:6px;
+        }
+
+        .logout{
+            text-align:center;
+            margin-top:40px;
+        }
+
+        .logout a{
+            background:red;
+            color:white;
+            padding:12px 30px;
+            border-radius:6px;
+            text-decoration:none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>Smart Interview Practice System</h1>
+
+</div>
+
+<div class="container">
+
+<h2>Interview History</h2>
+
+<table
+style="
+width:100%;
+border-collapse:collapse;
+background:white;
+box-shadow:0 0 10px lightgray;
+text-align:center;
+">
+
+<tr style="background:#007bff;color:white;height:50px">
+    <th style="padding:12px;">Interview</th>
+    <th>Score</th>
+    <th>Date</th>
+</tr>
+
+{% if history %}
+
+{% for row in history %}
+
+<tr>
+    <td style="padding:12px;">{{ row["interview_type"] }}</td>
+    <td>{{ row["score"] }}</td>
+    <td>{{ row["interview_date"] }}</td>
+</tr>
+
+{% endfor %}
+
+{% else %}
+
+<tr>
+    <td colspan="3" style="padding:20px;">
+        No interview history available.
+    </td>
+</tr>
+
+{% endif %}
+
+</table>
+
+<div style="margin-bottom:30px;"></div> 
+<div class="welcome">
+
+<h2>Welcome {{ name }} 👋</h2>
+
+<p>Select an interview module below.</p>
+
+</div>
+
+
+<div class="cards">
+
+<div class="card">
+
+<h2>HR Interview</h2>
+
+<p>Practice HR questions with AI evaluation.</p>
+
+<a href="/hr-interview" class="btn">
+Start HR Interview
+</a>
+
+</div>
+
+
+<div class="card">
+
+<h2>Technical Interview</h2>
+
+<p>Improve your technical interview skills.</p>
+
+<a href="/technical-interview" class="btn">
+Start Technical Interview
+</a>
+
+</div>
+
+
+<div class="card">
+
+<h2>Aptitude Interview</h2>
+
+<p>Practice aptitude-based questions.</p>
+
+<a href="/aptitude-interview" class="btn">
+Start Aptitude Interview
+</a>
+
+<a href="/analytics" class="btn">
+    📊 View Analytics
+</a>
+
+</div>
+
+</div>
+
+
+<div class="logout">
+
+<a href="/logout">
+Logout
+</a>
+
+</div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Technical Interview</title>
+
+    <style>
+        body{
+            font-family:Arial;
+            background:#f4f6f9;
+            text-align:center;
+        }
+
+        .box{
+            width:700px;
+            margin:80px auto;
+            background:white;
+            padding:40px;
+            border-radius:15px;
+            box-shadow:0 0 15px lightgray;
+        }
+
+        textarea{
+            width:90%;
+            height:180px;
+            font-size:18px;
+            padding:10px;
+            margin-top:20px;
+        }
+
+        button{
+            margin-top:25px;
+            padding:12px 35px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:18px;
+        }
+
+        button:hover{
+            background:#0056b3;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>Technical Interview</h2>
+
+<h3>Question {{ number }}</h3>
+
+<p><b>{{ question }}</b></p>
+
+<form method="POST">
+
+<textarea
+name="answer"
+placeholder="Explain your answer in detail..."
+required></textarea>
+
+<br>
+
+{% if number == total %}
+
+<button type="submit">
+Submit Interview
+</button>
+
+{% else %}
+
+<button type="submit">
+Next Question
+</button>
+
+{% endif %}
+
+</form>
+
+</div>
+
+</body>
+</html>
