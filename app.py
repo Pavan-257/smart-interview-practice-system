@@ -13,8 +13,10 @@ from otp import otp_storage, forgot_password_otp
 from pdf_report import generate_pdf
 import random
 
+import os
+
 app = Flask(__name__)
-app.secret_key = "smart_interview_secret_key"
+app.secret_key = os.getenv("SECRET_KEY", "smart_interview_secret")
 
 create_table()
 

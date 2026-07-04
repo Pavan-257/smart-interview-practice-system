@@ -1,10 +1,27 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 
+# Virtual environments
+venv/
+env/
+
+# Environment variables
 .env
 
+# Database
 database.db
 
+# Reports
 reports/
 
+# VS Code
 .vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
