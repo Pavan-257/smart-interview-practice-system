@@ -1,3 +1,5 @@
+import os
+from flask import send_file
 from flask import Flask, render_template, request, redirect, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_connection, create_table, save_result
@@ -17,6 +19,9 @@ import os
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "smart_interview_secret")
+
+REPORT_FOLDER = os.path.join(app.root_path, "reports")
+os.makedirs(REPORT_FOLDER, exist_ok=True)
 
 create_table()
 
@@ -270,6 +275,7 @@ def interview():
 def hr_interview():
 
     user = session.get("username")
+
     if not user:
         return redirect("/")
 
@@ -307,10 +313,16 @@ def hr_interview():
                 result["score"],
                 result["feedback"]
             )
-            pdf_filename = f"reports/{user}_HR_Report.pdf"
+
+            os.makedirs(REPORT_FOLDER, exist_ok=True)
+
+            filename = os.path.join(
+                REPORT_FOLDER,
+                f"{user}_HR_Report.pdf"
+            )
 
             generate_pdf(
-                pdf_filename,
+                filename,
                 user,
                 "HR Interview",
                 result["score"],
@@ -322,7 +334,8 @@ def hr_interview():
             return render_template(
                 "result.html",
                 score=result["score"],
-                feedback=result["feedback"]
+                feedback=result["feedback"],
+                filename=f"{user}_HR_Report.pdf"
             )
 
     return render_template(
@@ -331,12 +344,11 @@ def hr_interview():
         number=data["current"] + 1,
         total=len(data["questions"])
     )
-
-
 @app.route("/technical-interview", methods=["GET", "POST"])
 def technical_interview():
 
     user = session.get("username")
+
     if not user:
         return redirect("/")
 
@@ -363,7 +375,7 @@ def technical_interview():
 
         data["current"] += 1
 
-        if data["current"] >= len(data["questions"]):
+        if data["current"] == len(data["questions"]):
 
             result = evaluate_answers(
                 data["questions"],
@@ -377,36 +389,28 @@ def technical_interview():
                 result["feedback"]
             )
 
-            pdf_filename = f"reports/{user}_Technical_Report.pdf"
+            os.makedirs(REPORT_FOLDER, exist_ok=True)
+
+            filename = os.path.join(
+                REPORT_FOLDER,
+                f"{user}_Technical_Report.pdf"
+            )
 
             generate_pdf(
-                pdf_filename,
+                filename,
                 user,
                 "Technical Interview",
                 result["score"],
                 result["feedback"]
             )
 
-            session["last_report"] = pdf_filename
-
-            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
-
-            generate_pdf(
-                pdf_filename,
-                user,      
-                "Aptitude Interview",
-                result["score"],
-                result["feedback"]
-            )
-
-            session["last_report"] = pdf_filename
-
             del technical_data[user]
 
             return render_template(
                 "result.html",
                 score=result["score"],
-                feedback=result["feedback"]
+                feedback=result["feedback"],
+                filename=f"{user}_Technical_Report.pdf"
             )
 
     return render_template(
@@ -415,7 +419,6 @@ def technical_interview():
         number=data["current"] + 1,
         total=len(data["questions"])
     )
-
 
 @app.route("/aptitude-interview", methods=["GET", "POST"])
 def aptitude_interview():
@@ -461,30 +464,20 @@ def aptitude_interview():
                 result["feedback"]
             )
 
-            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
+            filename = os.path.join(
+                REPORT_FOLDER,
+                f"{user}_Aptitude_Report.pdf"
+            )
 
             generate_pdf(
-                pdf_filename,
+                filename,
                 user,
                 "Aptitude Interview",
                 result["score"],
                 result["feedback"]
             )
 
-            session["last_report"] = pdf_filename
-
-            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
-
-            generate_pdf(
-                pdf_filename,
-                user,
-                "Aptitude Interview",
-                result["score"],
-                result["feedback"]
-            )
-
-            session["last_report"] = pdf_filename
-
+            session["last_report"] = filename
             del aptitude_data[user]
 
             return render_template(
@@ -499,19 +492,24 @@ def aptitude_interview():
         number=data["current"] + 1,
         total=len(data["questions"])
     )
+@app.route("/download-report/<filename>")
+def download_report(filename):
+
+    filepath = os.path.join(REPORT_FOLDER, filename)
+
+    if not os.path.exists(filepath):
+        return "Report not found."
+
+    return send_file(
+        filepath,
+        as_attachment=True
+    )
+
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
-
-@app.route("/download-report")
-def download_report():
-
-    user = session.get("username")
-
-    if not user:
-        return redirect("/")
 
     filename = f"reports/{user}_HR_Report.pdf"
 
