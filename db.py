@@ -21,7 +21,8 @@ def create_table():
         email TEXT UNIQUE NOT NULL,
         age INTEGER NOT NULL,
         username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        profile_picture TEXT DEFAULT 'default.png'
     )
     """)
 

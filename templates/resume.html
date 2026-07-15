@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Resume Analyzer</title>
+
+<style>
+
+body{
+
+font-family:Arial;
+
+background:#0f172a;
+
+color:white;
+
+text-align:center;
+
+padding:50px;
+
+}
+
+.container{
+
+width:70%;
+
+margin:auto;
+
+background:white;
+
+color:black;
+
+padding:30px;
+
+border-radius:15px;
+
+}
+
+button{
+
+padding:12px 25px;
+
+background:#2563eb;
+
+color:white;
+
+border:none;
+
+border-radius:8px;
+
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#1d4ed8;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📄 AI Resume Analyzer</h1>
+
+<form method="POST" enctype="multipart/form-data">
+
+<input
+type="file"
+name="resume"
+accept=".pdf"
+required>
+
+<br><br>
+
+<button type="submit">
+
+Analyze Resume
+
+</button>
+
+</form>
+
+{% if score %}
+
+<hr>
+
+<h2>Resume Score : {{ score }}/100</h2>
+
+<h3>Skills Detected</h3>
+
+<hr>
+
+<h2>🤖 Gemini AI Resume Review</h2>
+
+<pre
+style="
+text-align:left;
+white-space:pre-wrap;
+font-size:16px;
+background:#f5f5f5;
+padding:20px;
+border-radius:12px;
+">
+
+{{ ai_report }}
+
+</pre>
+
+<ul>
+
+{% for skill in skills %}
+
+<li>{{ skill }}</li>
+
+{% endfor %}
+
+</ul>
+
+{% endif %}
+
+</div>
+
+</body>
+
+</html>

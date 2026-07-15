@@ -111,17 +111,21 @@
         {{ feedback|safe }}
     </div>
 
-    <div class="center">
+<div class="center">
 
-    <a href="/download-report" class="btn">
-        📄 Download PDF Report
-    </a>
+{% if filename %}
 
-    <br><br>
+<a href="/download-report/{{ filename }}" class="btn">
+📄 Download PDF Report
+</a>
 
-    <a href="/interview" class="btn">
-        Back to Dashboard
-    </a>
+<br><br>
+
+{% endif %}
+
+<a href="/dashboard" class="btn">
+🏠 Back to Dashboard
+</a>
 
 </div>
 

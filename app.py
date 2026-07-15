@@ -1,4 +1,7 @@
-from flask import Flask, render_template, request, redirect, session, send_file
+import os
+from flask import send_file
+from flask import (Flask, render_template, request, redirect, session, send_file, flash)
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_connection, create_table, save_result
 from question_bank import (
@@ -11,12 +14,24 @@ from ai_evaluator import evaluate_answers
 from utils import generate_otp, send_otp
 from otp import otp_storage, forgot_password_otp
 from pdf_report import generate_pdf
+from resume_analyzer import extract_resume_text
+from gemini_resume import analyze_resume
+from dotenv import load_dotenv
+
 import random
 
 import os
-
+load_dotenv()
 app = Flask(__name__)
+UPLOAD_FOLDER = "static/profile_pictures"
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.secret_key = os.getenv("SECRET_KEY", "smart_interview_secret")
+RESUME_FOLDER = "uploads"
+
+app.config["RESUME_FOLDER"] = RESUME_FOLDER
+REPORT_FOLDER = os.path.join(app.root_path, "reports")
+os.makedirs(REPORT_FOLDER, exist_ok=True)
 
 create_table()
 
@@ -62,17 +77,236 @@ def login():
 
             history = cursor.fetchall()
 
+            scores = []
+
+            for row in history:
+                try:
+                    scores.append(
+                        int(str(row["score"]).replace("%","").strip())
+                    )
+                except:
+                    pass
+
+            total_interviews = len(history)
+
+            average_score = round(sum(scores)/len(scores),1) if scores else 0
+
+            best_score = max(scores) if scores else 0
+
+            total_reports = total_interviews
+
             conn.close()
 
-            return render_template(
-                "dashboard.html",
-                name=user["name"],
-                history=history
-            )
+            return redirect("/dashboard")
 
         return "Invalid Email or Password"
 
     return render_template("login.html")
+@app.route("/dashboard")
+def dashboard():
+
+    user = session.get("username")
+
+    if not user:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE username=?",
+        (user,)
+    )
+
+    current_user = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT interview_type,
+               score,
+               interview_date
+        FROM interview_results
+        WHERE username=?
+        ORDER BY interview_date DESC
+    """, (user,))
+
+    history = cursor.fetchall()
+
+    # ---------------- Dashboard Statistics ----------------
+
+    scores = []
+
+    hr_count = 0
+    technical_count = 0
+    aptitude_count = 0
+
+    last_interview_date = "No Interviews"
+
+    for row in history:
+
+        try:
+            score = int(str(row["score"]).replace("%", "").strip())
+            scores.append(score)
+        except:
+            pass
+
+        interview = row["interview_type"].lower()
+
+        if "hr" in interview:
+            hr_count += 1
+
+        elif "technical" in interview:
+            technical_count += 1
+
+        elif "aptitude" in interview:
+            aptitude_count += 1
+
+    if history:
+        last_interview_date = history[0]["interview_date"]
+
+    total_interviews = len(history)
+
+    average_score = round(sum(scores) / len(scores), 1) if scores else 0
+
+    best_score = max(scores) if scores else 0
+
+    lowest_score = min(scores) if scores else 0
+
+    total_reports = len(history)
+
+    conn.close()
+
+    return render_template(
+        "dashboard.html",
+        name=current_user["name"],
+        history=history,
+
+        total_interviews=total_interviews,
+        average_score=average_score,
+        best_score=best_score,
+        lowest_score=lowest_score,
+
+        total_reports=total_reports,
+
+        hr_count=hr_count,
+        technical_count=technical_count,
+        aptitude_count=aptitude_count,
+
+        last_interview_date=last_interview_date
+    )
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+
+    if "username" not in session:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    username = session["username"]
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        mobile = request.form["mobile"]
+        email = request.form["email"]
+        age = request.form["age"]
+
+        cursor.execute("""
+            UPDATE users
+            SET
+                name=?,
+                mobile=?,
+                email=?,
+                age=?
+            WHERE username=?
+        """, (name, mobile, email, age, username))
+
+        conn.commit()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE username=?",
+        (username,)
+    )
+
+    user = cursor.fetchone()
+
+    conn.close()
+
+    return render_template(
+        "profile.html",
+        user=user
+    )
+
+@app.route("/edit-profile", methods=["GET", "POST"])
+def edit_profile():
+
+    if "username" not in session:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    username = session["username"]
+
+    # Get current user information
+    cursor.execute(
+        "SELECT * FROM users WHERE username=?",
+        (username,)
+    )
+
+    user = cursor.fetchone()
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        email = request.form["email"]
+        mobile = request.form["mobile"]
+        age = request.form["age"]
+
+        filename = user["profile_picture"]
+
+        picture = request.files.get("profile_picture")
+
+        if picture and picture.filename != "":
+
+            filename = secure_filename(picture.filename)
+
+            picture.save(
+                os.path.join(
+                    app.config["UPLOAD_FOLDER"],
+                    filename
+                )
+            )
+
+        cursor.execute("""
+            UPDATE users
+            SET
+                name=?,
+                email=?,
+                mobile=?,
+                age=?,
+                profile_picture=?
+            WHERE username=?
+        """,
+        (
+            name,
+            email,
+            mobile,
+            age,
+            filename,
+            username
+        ))
+
+        conn.commit()
+
+        return redirect("/profile")
+
+    conn.close()
+
+    return render_template(
+        "edit_profile.html",
+        user=user
+    )
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -270,6 +504,7 @@ def interview():
 def hr_interview():
 
     user = session.get("username")
+
     if not user:
         return redirect("/")
 
@@ -307,10 +542,16 @@ def hr_interview():
                 result["score"],
                 result["feedback"]
             )
-            pdf_filename = f"reports/{user}_HR_Report.pdf"
+
+            os.makedirs(REPORT_FOLDER, exist_ok=True)
+
+            filename = os.path.join(
+                REPORT_FOLDER,
+                f"{user}_HR_Report.pdf"
+            )
 
             generate_pdf(
-                pdf_filename,
+                filename,
                 user,
                 "HR Interview",
                 result["score"],
@@ -322,7 +563,8 @@ def hr_interview():
             return render_template(
                 "result.html",
                 score=result["score"],
-                feedback=result["feedback"]
+                feedback=result["feedback"],
+                filename=f"{user}_HR_Report.pdf"
             )
 
     return render_template(
@@ -331,12 +573,11 @@ def hr_interview():
         number=data["current"] + 1,
         total=len(data["questions"])
     )
-
-
 @app.route("/technical-interview", methods=["GET", "POST"])
 def technical_interview():
 
     user = session.get("username")
+
     if not user:
         return redirect("/")
 
@@ -363,7 +604,7 @@ def technical_interview():
 
         data["current"] += 1
 
-        if data["current"] >= len(data["questions"]):
+        if data["current"] == len(data["questions"]):
 
             result = evaluate_answers(
                 data["questions"],
@@ -377,36 +618,28 @@ def technical_interview():
                 result["feedback"]
             )
 
-            pdf_filename = f"reports/{user}_Technical_Report.pdf"
+            os.makedirs(REPORT_FOLDER, exist_ok=True)
+
+            filename = os.path.join(
+                REPORT_FOLDER,
+                f"{user}_Technical_Report.pdf"
+            )
 
             generate_pdf(
-                pdf_filename,
+                filename,
                 user,
                 "Technical Interview",
                 result["score"],
                 result["feedback"]
             )
 
-            session["last_report"] = pdf_filename
-
-            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
-
-            generate_pdf(
-                pdf_filename,
-                user,      
-                "Aptitude Interview",
-                result["score"],
-                result["feedback"]
-            )
-
-            session["last_report"] = pdf_filename
-
             del technical_data[user]
 
             return render_template(
                 "result.html",
                 score=result["score"],
-                feedback=result["feedback"]
+                feedback=result["feedback"],
+                filename=f"{user}_Technical_Report.pdf"
             )
 
     return render_template(
@@ -415,7 +648,6 @@ def technical_interview():
         number=data["current"] + 1,
         total=len(data["questions"])
     )
-
 
 @app.route("/aptitude-interview", methods=["GET", "POST"])
 def aptitude_interview():
@@ -461,36 +693,27 @@ def aptitude_interview():
                 result["feedback"]
             )
 
-            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
+            filename = os.path.join(
+                REPORT_FOLDER,
+                f"{user}_Aptitude_Report.pdf"
+            )
 
             generate_pdf(
-                pdf_filename,
+                filename,
                 user,
                 "Aptitude Interview",
                 result["score"],
                 result["feedback"]
             )
 
-            session["last_report"] = pdf_filename
-
-            pdf_filename = f"reports/{user}_Aptitude_Report.pdf"
-
-            generate_pdf(
-                pdf_filename,
-                user,
-                "Aptitude Interview",
-                result["score"],
-                result["feedback"]
-            )
-
-            session["last_report"] = pdf_filename
-
+            session["last_report"] = filename
             del aptitude_data[user]
 
             return render_template(
                 "result.html",
                 score=result["score"],
-                feedback=result["feedback"]
+                feedback=result["feedback"],
+                filename=f"{user}_Aptitude_Report.pdf"
             )
 
     return render_template(
@@ -499,19 +722,23 @@ def aptitude_interview():
         number=data["current"] + 1,
         total=len(data["questions"])
     )
+@app.route("/download-report/<filename>")
+def download_report(filename):
+
+    filepath = os.path.join(REPORT_FOLDER, filename)
+
+    if not os.path.exists(filepath):
+        return "Report not found."
+
+    return send_file(
+        filepath,
+        as_attachment=True
+    )
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
-
-@app.route("/download-report")
-def download_report():
-
-    user = session.get("username")
-
-    if not user:
-        return redirect("/")
 
     filename = f"reports/{user}_HR_Report.pdf"
 
@@ -583,6 +810,72 @@ def analytics():
         lowest_score=lowest_score,
         labels=labels,
         chart_scores=chart_scores
+    )
+
+@app.route("/resume", methods=["GET", "POST"])
+def resume():
+
+    if "username" not in session:
+        return redirect("/")
+
+    resume_text = ""
+    resume_score = 0
+    skills_found = []
+    ai_report = ""
+
+    if request.method == "POST":
+
+        file = request.files["resume"]
+
+        if file.filename != "":
+
+            filename = secure_filename(file.filename)
+
+            filepath = os.path.join(
+                app.config["RESUME_FOLDER"],
+                filename
+            )
+
+            file.save(filepath)
+
+            resume_text = extract_resume_text(filepath)
+            
+            ai_report = analyze_resume(resume_text)
+            skills_database = [
+
+                "python",
+                "java",
+                "c",
+                "c++",
+                "html",
+                "css",
+                "javascript",
+                "flask",
+                "sql",
+                "sqlite",
+                "mysql",
+                "machine learning",
+                "artificial intelligence",
+                "nlp",
+                "data structures",
+                "algorithms",
+                "git",
+                "github"
+            ]
+
+            for skill in skills_database:
+
+                if skill.lower() in resume_text.lower():
+                    skills_found.append(skill)
+
+            resume_score = min(len(skills_found) * 5 + 20, 100)
+
+    return render_template(
+    "resume.html",
+    score=resume_score,
+    skills=skills_found,
+    resume_text=resume_text,
+    ai_report=ai_report
     )
 
 if __name__ == "__main__":
