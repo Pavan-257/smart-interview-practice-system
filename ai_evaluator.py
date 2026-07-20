@@ -6,9 +6,12 @@ import os
 
 load_dotenv()
 
-genai.configure(
-    api_key=os.getenv("AQ.Ab8RN6LSUcPq1xKwxIyqg7B5chSOUt-x6ANYzyBYm6MKPMzv0w")
-)
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Load Gemini model
 model = genai.GenerativeModel("gemini-2.5-flash")
@@ -50,6 +53,31 @@ Do NOT use markdown symbols like ** or ###.
 """
 
     for i in range(len(questions)):
+
+        if answers[i] == "NO_ANSWER":
+
+            prompt += f"""
+
+<hr>
+
+<h3>Question {i+1}</h3>
+
+<p><strong>Question:</strong> {questions[i]}</p>
+
+<p><strong>Candidate Answer:</strong> No answer submitted.</p>
+
+<p><strong>Score:</strong> 0 / 10</p>
+
+<p><strong>Strengths:</strong> None</p>
+
+<p><strong>Areas for Improvement:</strong> Candidate skipped the question.</p>
+
+<p><strong>Better Sample Answer:</strong> Not Available</p>
+
+"""
+
+    else:
+
         prompt += f"""
 
 <hr>

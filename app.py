@@ -1,5 +1,9 @@
 import os
-from flask import send_file
+
+import random
+
+from datetime import date
+
 from flask import (Flask, render_template, request, redirect, session, send_file, flash)
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,9 +22,7 @@ from resume_analyzer import extract_resume_text
 from gemini_resume import analyze_resume
 from dotenv import load_dotenv
 
-import random
 
-import os
 load_dotenv()
 app = Flask(__name__)
 UPLOAD_FOLDER = "static/profile_pictures"
@@ -33,8 +35,6 @@ app.config["RESUME_FOLDER"] = RESUME_FOLDER
 REPORT_FOLDER = os.path.join(app.root_path, "reports")
 os.makedirs(REPORT_FOLDER, exist_ok=True)
 
-create_table()
-
 @app.route("/", methods=["GET", "POST"])
 def login():
 
@@ -43,9 +43,32 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
+
         conn = get_connection()
         cursor = conn.cursor()
 
+        # -----------------------------
+        # Check Admin Login
+        # -----------------------------
+        cursor.execute(
+            "SELECT * FROM admin WHERE username=?",
+            (email,)
+        )
+
+        admin = cursor.fetchone()
+
+        if admin and check_password_hash(admin["password"], password):
+
+            conn.close()
+
+            session.clear()
+            session["admin"] = admin["username"]
+
+            return redirect("/admin-dashboard")
+
+        # -----------------------------
+        # Check Normal User Login
+        # -----------------------------
         cursor.execute(
             "SELECT * FROM users WHERE email=?",
             (email,)
@@ -55,49 +78,16 @@ def login():
         print("User Found :", user)
 
         if user:
+            print("User Found :", user)
             print("Stored Hash :", user["password"])
             print("Entered Password :", password)
             print("Password Match :", check_password_hash(user["password"], password))
-        conn.close()
 
         if user and check_password_hash(user["password"], password):
             session["username"] = user["username"]
-
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                SELECT interview_type,
-                       score,
-                       interview_date
-                FROM interview_results
-                WHERE username=?
-                ORDER BY interview_date DESC
-            """, (user["username"],))
-
-            history = cursor.fetchall()
-
-            scores = []
-
-            for row in history:
-                try:
-                    scores.append(
-                        int(str(row["score"]).replace("%","").strip())
-                    )
-                except:
-                    pass
-
-            total_interviews = len(history)
-
-            average_score = round(sum(scores)/len(scores),1) if scores else 0
-
-            best_score = max(scores) if scores else 0
-
-            total_reports = total_interviews
-
-            conn.close()
-
             return redirect("/dashboard")
+        
+        conn.close()
 
         return "Invalid Email or Password"
 
@@ -146,7 +136,7 @@ def dashboard():
         try:
             score = int(str(row["score"]).replace("%", "").strip())
             scores.append(score)
-        except:
+        except ValueError:
             pass
 
         interview = row["interview_type"].lower()
@@ -193,6 +183,268 @@ def dashboard():
 
         last_interview_date=last_interview_date
     )
+
+@app.route("/admin-dashboard")
+def admin_dashboard():
+
+    if "admin" not in session:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Total Users
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+
+    # Total Interviews
+    cursor.execute("SELECT COUNT(*) FROM interview_results")
+    total_interviews = cursor.fetchone()[0]
+
+    # Average Score
+    cursor.execute("SELECT score FROM interview_results")
+
+    scores = []
+
+    for row in cursor.fetchall():
+
+        try:
+            scores.append(
+                int(str(row["score"]).replace("%", "").strip())
+            )
+        except ValueError:
+            pass
+
+    average_score = round(sum(scores) / len(scores), 1) if scores else 0
+    # Highest Score
+    highest_score = max(scores) if scores else 0
+
+    # Lowest Score
+    lowest_score = min(scores) if scores else 0
+
+    # Total Reports
+    total_reports = total_interviews
+
+    # Active Users
+    cursor.execute("""
+    SELECT COUNT(DISTINCT username)
+    FROM interview_results
+    """)
+
+    active_users = cursor.fetchone()[0]
+
+    # Today's Interviews
+    today = date.today().isoformat()
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM interview_results
+    WHERE DATE(interview_date)=?
+    """, (today,))
+
+    today_interviews = cursor.fetchone()[0]
+
+    # Interview Distribution
+    cursor.execute("""
+    SELECT interview_type,
+    COUNT(*) AS total
+    FROM interview_results
+    GROUP BY interview_type
+    """)
+
+    interview_types = cursor.fetchall()
+
+    labels = []
+    values = []
+
+    for row in interview_types:
+        labels.append(row["interview_type"])
+        values.append(row["total"])
+
+    # User List
+    search = request.args.get("search", "")
+
+    if search:
+
+        cursor.execute("""
+        SELECT
+            id,
+            name,
+            email,
+            mobile,
+            username,
+            age
+        FROM users
+
+        WHERE
+
+        name LIKE ?
+        OR email LIKE ?
+        OR username LIKE ?
+        OR mobile LIKE ?
+
+        ORDER BY id DESC
+    """,
+
+    (
+        f"%{search}%",
+        f"%{search}%",
+        f"%{search}%",
+        f"%{search}%"
+    ))
+
+    else:
+
+        cursor.execute("""
+        SELECT
+            id,
+            name,
+            email,
+            mobile,
+            username,
+            age
+        FROM users
+        ORDER BY id DESC
+    """)
+
+    users = cursor.fetchall()
+
+    # -----------------------------
+    # Latest Interview Scores
+    # -----------------------------
+    cursor.execute("""
+    SELECT username, score
+    FROM interview_results
+    ORDER BY interview_date DESC
+    LIMIT 10
+    """)
+
+    score_data = cursor.fetchall()
+
+    score_labels = []
+    score_values = []
+
+    for row in score_data:
+
+        score_labels.append(row["username"])
+
+        try:
+           score_values.append(
+            int(str(row["score"]).replace("%", "").strip())
+           )
+        except ValueError:
+            score_values.append(0)
+    # Recent Activity
+    cursor.execute("""
+    SELECT
+        username,
+        interview_type,
+        score,
+        interview_date
+    FROM interview_results
+    ORDER BY interview_date DESC
+    LIMIT 10
+    """)
+
+    recent_activity = cursor.fetchall()
+    conn.close()
+
+    return render_template(
+    "admin_dashboard.html",
+
+    total_users=total_users,
+    total_interviews=total_interviews,
+    average_score=average_score,
+    highest_score=highest_score,
+    lowest_score=lowest_score,
+    total_reports=total_reports,
+    today_interviews=today_interviews,
+    active_users=active_users,
+    users=users,
+    search=search,
+    labels=labels,
+    values=values,
+    score_labels=score_labels,
+    score_values=score_values,
+    recent_activity=recent_activity
+)
+@app.route("/admin/user/<int:user_id>")
+def admin_view_user(user_id):
+
+    if "admin" not in session:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # User details
+    cursor.execute(
+        "SELECT * FROM users WHERE id=?",
+        (user_id,)
+    )
+
+    user = cursor.fetchone()
+
+    # Interview history
+    cursor.execute("""
+        SELECT
+            interview_type,
+            score,
+            feedback,
+            interview_date
+        FROM interview_results
+        WHERE username=?
+        ORDER BY interview_date DESC
+    """, (user["username"],))
+
+    interviews = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "admin_user.html",
+        user=user,
+        interviews=interviews
+    )
+@app.route("/admin/delete-user/<int:user_id>")
+def delete_user(user_id):
+
+    if "admin" not in session:
+        return redirect("/")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Get username before deleting
+    cursor.execute(
+        "SELECT username FROM users WHERE id=?",
+        (user_id,)
+    )
+
+    user = cursor.fetchone()
+
+    if user:
+
+        username = user["username"]
+
+        # Delete interview history
+        cursor.execute(
+            "DELETE FROM interview_results WHERE username=?",
+            (username,)
+        )
+
+        # Delete user
+        cursor.execute(
+            "DELETE FROM users WHERE id=?",
+            (user_id,)
+        )
+
+        conn.commit()
+
+    conn.close()
+
+    return redirect("/admin-dashboard")
+
 @app.route("/profile", methods=["GET", "POST"])
 def profile():
 
@@ -454,6 +706,7 @@ def forgot_password():
         return redirect("/reset-password")
 
     return render_template("forgot_password.html")
+
 @app.route("/reset-password", methods=["GET", "POST"])
 def reset_password():
 
@@ -496,9 +749,6 @@ def reset_password():
         return redirect("/")
 
     return render_template("reset_password.html")
-@app.route("/interview")
-def interview():
-    return render_template("interview.html")
 
 @app.route("/hr-interview", methods=["GET", "POST"])
 def hr_interview():
@@ -521,15 +771,22 @@ def hr_interview():
 
     data = interview_data[user]
 
+    # Safety check
+    if data["current"] >= len(data["questions"]):
+        del interview_data[user]
+        return redirect("/dashboard")
+
     if request.method == "POST":
 
-        answer = request.form["answer"]
+       answer = request.form.get("answer", "").strip()
 
+    if answer == "":
+        data["answers"].append("NO_ANSWER")
+    else:
         data["answers"].append(answer)
-
         data["current"] += 1
 
-        if data["current"] == len(data["questions"]):
+        if data["current"] >= len(data["questions"]):
 
             result = evaluate_answers(
                 data["questions"],
@@ -567,12 +824,15 @@ def hr_interview():
                 filename=f"{user}_HR_Report.pdf"
             )
 
+    if data["current"] >= len(data["questions"]):
+        return redirect("/dashboard")
+
     return render_template(
-        "hr_interview.html",
-        question=data["questions"][data["current"]],
-        number=data["current"] + 1,
-        total=len(data["questions"])
-    )
+    "hr_interview.html",
+    question=data["questions"][data["current"]],
+    number=data["current"] + 1,
+    total=len(data["questions"])
+)
 @app.route("/technical-interview", methods=["GET", "POST"])
 def technical_interview():
 
@@ -596,6 +856,10 @@ def technical_interview():
 
     data = technical_data[user]
 
+    if data["current"] >= len(data["questions"]):
+        del technical_data[user]
+        return redirect("/dashboard")
+
     if request.method == "POST":
 
         answer = request.form["answer"]
@@ -604,7 +868,7 @@ def technical_interview():
 
         data["current"] += 1
 
-        if data["current"] == len(data["questions"]):
+        if data["current"] >= len(data["questions"]):
 
             result = evaluate_answers(
                 data["questions"],
@@ -642,12 +906,15 @@ def technical_interview():
                 filename=f"{user}_Technical_Report.pdf"
             )
 
+    if data["current"] >= len(data["questions"]):
+        return redirect("/dashboard")
+
     return render_template(
-        "technical_interview.html",
-        question=data["questions"][data["current"]],
-        number=data["current"] + 1,
-        total=len(data["questions"])
-    )
+    "technical_interview.html",
+    question=data["questions"][data["current"]],
+    number=data["current"] + 1,
+    total=len(data["questions"])
+)
 
 @app.route("/aptitude-interview", methods=["GET", "POST"])
 def aptitude_interview():
@@ -670,6 +937,9 @@ def aptitude_interview():
         }
 
     data = aptitude_data[user]
+    if data["current"] >= len(data["questions"]):
+        del aptitude_data[user]
+        return redirect("/dashboard")
 
     if request.method == "POST":
 
@@ -716,12 +986,15 @@ def aptitude_interview():
                 filename=f"{user}_Aptitude_Report.pdf"
             )
 
+    if data["current"] >= len(data["questions"]):
+        return redirect("/dashboard")
+
     return render_template(
-        "aptitude_interview.html",
-        question=data["questions"][data["current"]],
-        number=data["current"] + 1,
-        total=len(data["questions"])
-    )
+    "aptitude_interview.html",
+    question=data["questions"][data["current"]],
+    number=data["current"] + 1,
+    total=len(data["questions"])
+)
 @app.route("/download-report/<filename>")
 def download_report(filename):
 
@@ -739,13 +1012,6 @@ def download_report(filename):
 def logout():
     session.clear()
     return redirect("/")
-
-    filename = f"reports/{user}_HR_Report.pdf"
-
-    return send_file(
-        filename,
-        as_attachment=True
-    )
 
 @app.route("/analytics")
 def analytics():
@@ -775,7 +1041,7 @@ def analytics():
         try:
             score = int(str(row["score"]).replace("%", "").strip())
             scores.append(score)
-        except:
+        except ValueError:
             pass
 
     total_interviews = len(results)
@@ -794,12 +1060,12 @@ def analytics():
     for row in results:
         labels.append(row["interview_type"])
 
-    try:
-        chart_scores.append(
+        try:
+           chart_scores.append(
             int(str(row["score"]).replace("%", "").strip())
-        )
-    except:
-        chart_scores.append(0)
+            )
+        except:
+          chart_scores.append(0)
 
     return render_template(
         "analytics.html",
@@ -880,4 +1146,4 @@ def resume():
 
 if __name__ == "__main__":
     create_table()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True) 

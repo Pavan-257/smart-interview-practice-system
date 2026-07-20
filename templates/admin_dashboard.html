@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Admin Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+
+    margin:0;
+
+    font-family:Poppins,sans-serif;
+
+    background-image:url("/static/admin_background.png");
+
+    background-size:cover;
+
+    background-position:center;
+
+    background-repeat:no-repeat;
+
+    background-attachment:fixed;
+
+}
+
+.overlay{
+
+    min-height:100vh;
+
+    background:rgba(10,20,40,.25);
+
+    padding:30px;
+
+}
+
+h1{
+
+color:white;
+
+text-align:center;
+
+font-size:42px;
+
+margin-bottom:30px;
+
+}
+
+h2{
+
+color:white;
+
+margin-top:40px;
+
+}
+
+.cards{
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+gap:20px;
+
+margin:30px 0;
+
+}
+
+.card{
+
+background:rgba(255,255,255,.15);
+
+backdrop-filter:blur(15px);
+
+border:1px solid rgba(255,255,255,.25);
+
+padding:25px;
+
+width:auto;
+
+border-radius:20px;
+
+box-shadow:0 12px 35px rgba(0,0,0,.35);
+
+text-align:center;
+
+color:white;
+
+transition:.35s;
+
+}
+
+.card h2{
+
+font-size:42px;
+margin-bottom:10px;
+
+}
+
+.card:hover{
+
+transform:translateY(-8px);
+
+}
+
+button:hover,
+a:hover{
+
+transform:translateY(-3px);
+box-shadow:0 8px 20px rgba(0,0,0,.25);
+
+}
+
+.chart-card{
+
+background:rgba(255,255,255,.15);
+
+backdrop-filter:blur(15px);
+
+border:1px solid rgba(255,255,255,.25);
+
+padding:30px;
+
+border-radius:20px;
+
+box-shadow:0 12px 35px rgba(0,0,0,.35);
+
+margin-top:25px;
+
+color:white;
+
+}
+
+table{
+
+width:100%;
+
+border-collapse:collapse;
+
+background:rgba(255,255,255,.12);
+
+backdrop-filter:blur(15px);
+
+box-shadow:0 15px 35px rgba(0,0,0,.35);
+
+color:white;
+
+overflow:hidden;
+
+border-radius:20px;
+
+}
+
+tr:hover{
+
+background:rgba(255,255,255,.08);
+
+transition:.3s;
+
+}
+
+th{
+
+background:rgba(37,99,235,.8);
+
+padding:15px;
+
+color:white;
+
+}
+
+td{
+
+padding:14px;
+
+text-align:center;
+
+border-bottom:1px solid rgba(255,255,255,.12);
+
+color:white;
+
+}
+
+button,
+a{
+
+display:inline-block;
+
+}
+
+canvas{
+
+background:white;
+
+border-radius:15px;
+
+padding:15px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="overlay">
+
+<h1>Smart Interview Admin Dashboard</h1>
+
+<div class="cards">
+
+<div class="card">
+<h2>{{ total_users }}</h2>
+<p>Total Users</p>
+</div>
+
+<div class="card">
+<h2>{{ total_interviews }}</h2>
+<p>Total Interviews</p>
+</div>
+
+<div class="card">
+<h2>{{ total_reports }}</h2>
+<p>Total Reports</p>
+</div>
+
+<div class="card">
+<h2>{{ average_score }}%</h2>
+<p>Average Score</p>
+</div>
+
+<div class="card">
+<h2>{{ highest_score }}%</h2>
+<p>Highest Score</p>
+</div>
+
+<div class="card">
+<h2>{{ lowest_score }}%</h2>
+<p>Lowest Score</p>
+</div>
+
+<div class="card">
+<h2>{{ today_interviews }}</h2>
+<p>Today's Interviews</p>
+</div>
+
+<div class="card">
+<h2>{{ active_users }}</h2>
+<p>Active Users</p>
+</div>
+
+</div>
+
+<form
+method="GET"
+style="
+margin:30px auto;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:12px;
+flex-wrap:wrap;
+">
+
+<input
+
+type="text"
+
+name="search"
+
+value="{{ search }}"
+
+placeholder="Search by Name, Email, Username or Mobile"
+
+style="
+width:350px;
+padding:14px;
+border:none;
+border-radius:10px;
+font-size:16px;
+outline:none;
+background:rgba(255,255,255,.9);
+">
+
+<button
+
+style="
+padding:12px 25px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+">
+
+Search
+
+</button>
+
+<a
+
+href="/admin-dashboard"
+
+style="
+margin-left:10px;
+text-decoration:none;
+background:#ef4444;
+padding:12px 20px;
+color:white;
+border-radius:8px;
+">
+
+Clear
+
+</a>
+
+</form>
+
+<h2>Registered Users</h2>
+
+<table>
+
+<tr>
+
+<th>ID</th>
+
+<th>Name</th>
+
+<th>Email</th>
+
+<th>Mobile</th>
+
+<th>Username</th>
+
+<th>Age</th>
+<th>Actions</th>
+
+</tr>
+
+{% for user in users %}
+
+<tr>
+
+<td>{{ user["id"] }}</td>
+
+<td>{{ user["name"] }}</td>
+
+<td>{{ user["email"] }}</td>
+
+<td>{{ user["mobile"] }}</td>
+
+<td>{{ user["username"] }}</td>
+
+<td>{{ user["age"] }}</td>
+
+<td>
+
+<a href="/admin/user/{{ user['id'] }}"
+style="
+background:linear-gradient(135deg,#2563eb,#3b82f6);
+transition:.3s;
+color:white;
+padding:8px 15px;
+border-radius:6px;
+text-decoration:none;
+margin-right:5px;
+">
+View
+</a>
+
+<a href="/admin/delete-user/{{ user['id'] }}"
+onclick="return confirm('Are you sure you want to delete this user?')"
+style="
+background:#dc2626;
+color:white;
+padding:8px 15px;
+border-radius:6px;
+text-decoration:none;
+transition:.3s;
+">
+Delete
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="chart-card">
+
+<h2 style="text-align:center;">
+Interview Distribution
+</h2>
+
+<div class="chart-card">
+
+<h2 style="text-align:center;">
+Interview Distribution
+</h2>
+
+<canvas
+id="interviewChart"
+style="max-height:420px;">
+</canvas>
+
+</div>
+
+</div>
+
+<div class="chart-card">
+
+<h2 style="text-align:center;">
+Latest Interview Scores
+</h2>
+
+<div class="chart-card">
+
+<h2 style="text-align:center;">
+Interview Distribution
+</h2>
+
+<canvas
+id="scoreChart"
+style="max-height:420px;">
+</canvas>
+
+</div>
+
+</div>
+
+<script>
+
+const labels = JSON.parse('{{ labels|tojson|safe }}');
+const values = JSON.parse('{{ values|tojson|safe }}');
+
+const ctx = document.getElementById("interviewChart");
+
+new Chart(ctx, {
+
+    type: "pie",
+
+    data: {
+
+        labels: labels,
+
+        datasets: [{
+
+            data: values
+
+        }]
+
+    },
+
+    options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false
+
+    }
+
+});
+
+</script>
+
+<script>
+
+const scoreLabels = JSON.parse('{{ score_labels|tojson|safe }}');
+const scoreValues = JSON.parse('{{ score_values|tojson|safe }}');
+
+const ctx2 = document.getElementById("scoreChart");
+
+new Chart(ctx2, {
+
+    type: "bar",
+
+    data: {
+
+        labels: scoreLabels,
+
+        datasets: [{
+
+            label: "Interview Score",
+
+            data: scoreValues,
+
+            borderWidth: 1
+
+        }]
+
+    },
+
+    options: {
+
+    responsive: true,
+
+    maintainAspectRatio: false,
+
+    scales: {
+
+        y: {
+
+            beginAtZero: true,
+
+            max: 100
+
+        }
+
+    }
+
+}
+
+});
+
+</script>
+
+<h2 style="margin-top:50px;">Recent Activity</h2>
+
+<table>
+
+<tr>
+
+<th>User</th>
+
+<th>Interview</th>
+
+<th>Score</th>
+
+<th>Date</th>
+
+</tr>
+
+{% for row in recent_activity %}
+
+<tr>
+
+<td>{{ row["username"] }}</td>
+
+<td>{{ row["interview_type"] }}</td>
+
+<td>{{ row["score"] }}</td>
+
+<td>{{ row["interview_date"] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+</body>
+
+</html>

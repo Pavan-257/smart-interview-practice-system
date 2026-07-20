@@ -1,68 +1,312 @@
 <!DOCTYPE html>
 <html>
 <head>
+
     <title>HR Interview</title>
 
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <style>
-        body{
-            font-family:Arial;
-            background:#f4f6f9;
-            text-align:center;
-        }
+      body{
+    margin:0;
+    padding:0;
+    font-family:'Segoe UI',Arial,sans-serif;
 
-        .box{
-            width:700px;
-            margin:80px auto;
-            background:white;
-            padding:40px;
-            border-radius:15px;
-            box-shadow:0 0 15px lightgray;
-        }
+    background-image:url("/static/hr_background.png");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+}
 
-        textarea{
-            width:90%;
-            height:180px;
-            font-size:18px;
-            padding:10px;
-            margin-top:20px;
-        }
+.overlay{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:rgba(10,20,40,.25);
+    backdrop-filter:blur(0.5px);
+}
 
-        button{
-            margin-top:25px;
-            padding:12px 35px;
-            background:#007bff;
-            color:white;
-            border:none;
-            border-radius:8px;
-            cursor:pointer;
-            font-size:18px;
-        }
+.box{
+    width:90%;
+    padding:35px;
+    box-sizing:border-box;
+    max-width:900px;
+    border-radius:25px;
+    background:rgba(20,25,40,.65);
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.25);
+    box-shadow:0 15px 50px rgba(0,0,0,.45);
+    color:white;
+}
 
-        button:hover{
-            background:#0056b3;
-        }
+h2{
+    font-size:40px;
+    color:white;
+}
+
+h3{
+    color:#64B5F6;
+    font-size:22px;
+    margin-top:10px;
+}
+
+p{
+    font-size:28px;
+    font-weight:600;
+    line-height:1.6;
+    color:white;
+}
+
+textarea{
+
+width:100%;
+
+height:180px;
+
+padding:18px;
+
+font-size:18px;
+
+border-radius:15px;
+
+resize:none;
+
+box-sizing:border-box;
+
+}
+
+button{
+    margin-top:30px;
+    padding:16px 42px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#0066ff,#00bfff);
+    color:white;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s ease;
+}
+
+button:hover{
+    transform:translateY(-4px);
+    box-shadow:0 12px 25px rgba(0,123,255,.45);
+}
+
+@keyframes robotFloat{
+
+0%{
+    transform:translateY(0px);
+}
+
+50%{
+    transform:translateY(-6px);
+}
+
+100%{
+    transform:translateY(0px);
+}
+
+}
+
+/* -------------------------
+   Mobile Responsive Design
+--------------------------*/
+
+@media (max-width:768px){
+
+.box{
+
+width:95%;
+
+padding:20px;
+
+}
+
+h2{
+
+font-size:30px;
+
+}
+
+h3{
+
+font-size:18px;
+
+}
+
+p{
+
+font-size:22px;
+
+}
+
+textarea{
+
+height:150px;
+
+font-size:17px;
+
+}
+
+button{
+
+width:100%;
+
+font-size:18px;
+
+padding:15px;
+
+margin-top:15px;
+
+}
+
+#timer{
+
+font-size:18px;
+
+}
+
+}
+
     </style>
 
 </head>
 
 <body>
 
+<div class="overlay">
+
 <div class="box">
 
-<h2>HR Interview</h2>
+<h2>🤖 AI HR Interview</h2>
 
-<h3>Question {{ number }}</h3>
+<div id="aiAssistant" style="
+display:flex;
+align-items:center;
+gap:15px;
+margin-top:20px;
+margin-bottom:20px;
+padding:15px;
+border-radius:15px;
+background:rgba(255,255,255,.08);
+border:1px solid rgba(255,255,255,.15);
+">
 
-<p><b>{{ question }}</b></p>
+<div id="robotFace" style="
+font-size:42px;
+animation:robotFloat 2s infinite ease-in-out;
+">
+🤖
+</div>
+
+<div>
+
+<div style="
+font-size:20px;
+font-weight:bold;
+color:white;
+">
+AI Interviewer
+</div>
+
+<div
+id="assistantStatus"
+style="
+color:#7dd3fc;
+font-size:15px;
+margin-top:5px;
+">
+Preparing...
+</div>
+
+</div>
+
+</div>
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:20px;
+margin-bottom:20px;
+">
+
+<div>
+
+<h3 style="margin:0;">
+Question {{ number }} of {{ total }}
+</h3>
+
+</div>
+
+<div>
+
+<span id="timer"
+style="
+font-size:22px;
+font-weight:bold;
+color:#38BDF8;
+">
+⏱ 02:00
+</span>
+
+</div>
+
+</div>
+
+<hr style="border:1px solid rgba(255,255,255,.2); margin-bottom:25px;">
+
+<p id="typingStatus"
+style="
+color:#7dd3fc;
+font-size:16px;
+margin-top:5px;
+font-style:italic;
+">
+🤖 AI is preparing your question...
+</p>
+
+<p>
+    <b id="questionText"></b>
+</p>
+
+<div id="fullQuestion" style="display:none;">
+    {{ question }}
+</div>
+
+<div style="
+width:100%;
+height:14px;
+background:rgba(255,255,255,.18);
+border-radius:20px;
+overflow:hidden;
+margin:25px 0;
+">
+
+<div id="progressBar"
+style="
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#22c55e,#38bdf8);
+transition:.8s;
+">
+</div>
+
+</div>
 
 <form method="POST">
 
 <textarea
+id="answerBox"
 name="answer"
 placeholder="Type your answer here..."
 required></textarea>
 
-<br>
+<br><br>
 
 {% if number == total %}
 
@@ -82,5 +326,89 @@ Next Question
 
 </div>
 
+</div>
+
+<script>
+
+window.onload = function () {
+
+    // Progress Bar
+    const current = Number("{{ number }}");
+    const total = Number("{{ total }}");
+
+    const percent = (current / total) * 100;
+    document.getElementById("progressBar").style.width = percent + "%";
+
+    // Typing Animation
+    const fullQuestion =
+        document.getElementById("fullQuestion").innerText;
+
+    const question =
+        document.getElementById("questionText");
+
+    const status =
+        document.getElementById("typingStatus");
+
+    let index = 0;
+
+    function typeQuestion(){
+
+        if(index < fullQuestion.length){
+
+            question.innerHTML += fullQuestion.charAt(index);
+
+            index++;
+
+            setTimeout(typeQuestion,40);
+
+        }
+
+        else{
+
+            status.innerHTML="🤖 AI is listening...";
+
+            document.getElementById("assistantStatus").innerHTML =
+            "🟢 Listening... Please answer the question.";
+
+        }
+
+    }
+
+    document.getElementById("assistantStatus").innerHTML =
+    "🔵 Speaking... Generating question...";
+
+    setTimeout(typeQuestion,600);
+
+    // 30 Second Timer
+
+let timeLeft = 30;
+
+const timer = document.getElementById("timer");
+
+const countdown = setInterval(function(){
+
+    let seconds = timeLeft;
+
+    timer.innerHTML = "⏱ 00:" + (seconds < 10 ? "0" + seconds : seconds);
+
+    timeLeft--;
+
+    if(timeLeft < 0){
+
+        clearInterval(countdown);
+
+        timer.innerHTML = "⏱ Time Up!";
+
+        document.forms[0].submit();
+
+    }
+
+ },1000);
+
+}
+
+</script>
+
 </body>
+
 </html>

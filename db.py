@@ -25,6 +25,13 @@ def create_table():
         profile_picture TEXT DEFAULT 'default.png'
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS admin(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )
+    """)
 
     # Interview Results table
     cursor.execute("""
@@ -37,7 +44,19 @@ def create_table():
         interview_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    from werkzeug.security import generate_password_hash
 
+    cursor.execute("SELECT * FROM admin")
+
+    if cursor.fetchone() is None:
+
+        cursor.execute("""
+        INSERT INTO admin(username,password)
+        VALUES(?,?)
+        """,(
+            "admin",
+             generate_password_hash("admin123")
+        ))
     conn.commit()
     conn.close()
 

@@ -5,58 +5,161 @@
 
     <style>
         body{
-            margin:0;
-            padding:0;
-            font-family: Arial, sans-serif;
-            background:#f4f6f9;
-            height:100vh;
-            display:flex;
-            justify-content:center;
-            align-items:center;
+
+        margin:0;
+
+        font-family:"Poppins",sans-serif;
+
+        background-image:url("/static/login_background.png");
+
+        background-size:cover;
+
+        background-position:center;
+
+        background-repeat:no-repeat;
+
+        background-attachment:fixed;
+
+        min-height:100vh;
+
+        display:flex;
+
+        justify-content:center;
+
+        align-items:center;
+
+        }
+
+        .overlay{
+
+        width:100%;
+
+        min-height:100vh;
+
+        display:flex;
+
+        justify-content:flex-end;
+
+        align-items:center;
+
+        padding-right:3%;
+
+        background:rgba(10,20,40,.30);
+
         }
 
         .container{
-            width:900px;
-            background:white;
-            display:flex;
-            border-radius:15px;
-            box-shadow:0px 0px 20px rgba(0,0,0,0.2);
-            overflow:hidden;
-        }
 
+        width:420px;
+
+        padding:40px;
+
+        border-radius:25px;
+
+        background:rgba(255,255,255,.15);
+
+        backdrop-filter:blur(18px);
+ 
+        border:1px solid rgba(255,255,255,.2);
+
+        box-shadow:0 20px 45px rgba(0,0,0,.35);
+
+        color:white;
+
+        opacity:0;
+
+        transform:translateY(60px) scale(.95);
+
+        animation:loginAppear 2s ease forwards;
+
+        }
+        
         .left{
-            width:50%;
-            padding:40px;
+
+        width:100%;
+
+        padding:0;
+
         }
 
         .left h1{
-            color:#2c3e50;
-            margin-bottom:30px;
+
+        color:white;
+
+        font-size:42px;
+
+        margin-bottom:35px;
+
+        text-align:left;
+
         }
 
         .input-box{
-            width:100%;
-            padding:12px;
-            margin-top:8px;
-            margin-bottom:20px;
-            border:1px solid #ccc;
-            border-radius:8px;
-            font-size:15px;
+
+        width:100%;
+
+        padding:15px;
+
+        margin-top:8px;
+
+        margin-bottom:22px;
+
+        border:none;
+
+        border-radius:10px;
+
+        font-size:16px;
+
+        background:rgba(255,255,255,.90);
+
+        }
+
+        label{
+
+        display:block;
+
+        text-align:left;
+
+        margin-bottom:8px;
+
+        margin-top:15px;
+
+        font-size:17px;
+
+        font-weight:600;
+
+        color:white;
+
         }
 
         .btn{
-            width:100%;
-            padding:12px;
-            background:#007bff;
-            color:white;
-            border:none;
-            border-radius:8px;
-            font-size:16px;
-            cursor:pointer;
+
+        width:100%;
+
+        padding:15px;
+
+        font-size:18px;
+
+        font-weight:bold;
+ 
+        background:linear-gradient(135deg,#2563eb,#38bdf8);
+
+        border:none;
+
+        border-radius:12px;
+
+        cursor:pointer;
+
+        transition:.35s;
+
         }
 
         .btn:hover{
-            background:#0056b3;
+
+        transform:translateY(-3px);
+
+        box-shadow:0 15px 30px rgba(0,0,0,.30);
+
         }
 
         .register-link{
@@ -70,21 +173,41 @@
             font-weight:bold;
         }
 
-        .right{
-            width:50%;
-            background:#eaf3ff;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-        }
 
-        .right img{
-    width:60%;
-}
+    @keyframes loginAppear{
+
+    0%{
+
+    opacity:0;
+
+    transform:translateY(60px) scale(.95);
+
+    }
+
+    60%{
+
+    opacity:1;
+
+    transform:translateY(-8px) scale(1.02);
+
+    }
+
+    100%{
+
+    opacity:1;
+
+    transform:translateY(0) scale(1);
+
+    }
+
+    }
+
     </style>
 </head>
 
 <body>
+
+<div class="overlay">
 
 <div class="container">
 
@@ -124,9 +247,7 @@
 
     </div>
 
-    <div class="right">
-    <img src="{{ url_for('static', filename='pic1.jpg') }}" style="width:70%;">
-    </div>
+</div>
 
 </div>
 

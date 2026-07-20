@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>User Profile</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6fb;
+padding:40px;
+}
+
+.card{
+
+background:white;
+
+padding:30px;
+
+border-radius:12px;
+
+box-shadow:0 5px 15px lightgray;
+
+margin-bottom:30px;
+
+}
+
+img{
+
+width:140px;
+
+height:140px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+margin-bottom:20px;
+
+}
+
+table{
+
+width:100%;
+
+border-collapse:collapse;
+
+background:white;
+
+}
+
+th{
+
+background:#2563eb;
+
+color:white;
+
+padding:12px;
+
+}
+
+td{
+
+padding:12px;
+
+text-align:center;
+
+border-bottom:1px solid #ddd;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<img src="{{ url_for('static', filename='profile_pictures/' + user['profile_picture']) }}">
+
+<h2>{{ user["name"] }}</h2>
+
+<p><b>Email:</b> {{ user["email"] }}</p>
+
+<p><b>Mobile:</b> {{ user["mobile"] }}</p>
+
+<p><b>Username:</b> {{ user["username"] }}</p>
+
+<p><b>Age:</b> {{ user["age"] }}</p>
+
+</div>
+
+<h2>Interview History</h2>
+
+<table>
+
+<tr>
+
+<th>Interview</th>
+
+<th>Score</th>
+
+<th>Feedback</th>
+
+<th>Date</th>
+
+</tr>
+
+{% for row in interviews %}
+
+<tr>
+
+<td>{{ row["interview_type"] }}</td>
+
+<td>{{ row["score"] }}</td>
+
+<td>{{ row["feedback"]|safe }}</td>
+
+<td>{{ row["interview_date"] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<br><br>
+
+<a href="/admin-dashboard">
+⬅ Back to Dashboard
+</a>
+
+</body>
+
+</html>

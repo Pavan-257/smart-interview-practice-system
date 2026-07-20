@@ -19,11 +19,15 @@ font-family:"Poppins",sans-serif;
 
 body{
 
-background:linear-gradient(135deg,#0f172a,#2563eb,#0ea5e9);
+background-image:url("/static/homepage_background.png");
 
-background-size:400% 400%;
+background-size:cover;
 
-animation:bgMove 12s infinite;
+background-position:center;
+
+background-repeat:no-repeat;
+
+background-attachment:fixed;
 
 min-height:100vh;
 
@@ -36,6 +40,16 @@ min-height:100vh;
 50%{background-position:100% 50%;}
 
 100%{background-position:0% 50%;}
+
+}
+
+.overlay{
+
+min-height:100vh;
+
+background:rgba(10,20,40,.45);
+
+padding-bottom:40px;
 
 }
 
@@ -260,6 +274,8 @@ margin-bottom:10px;
 </head>
 
 <body>
+
+<div class="overlay">
 
 <div class="header">
 
@@ -534,29 +550,51 @@ transition:2s;">
             Start Interview
         </a>
 
-        <br>
-
-        <a href="/analytics" class="btn">
-            📊 Analytics
-        </a>
-
     </div>
 
-    <div class="card">
+   <div class="card">
 
-    <h2>👤 My Profile</h2>
+<h2>👤 My Profile</h2>
+
+<p>
+View and update your personal information.
+</p>
+
+<a href="/profile" class="btn">
+Open Profile
+</a>
+
+</div>
+
+<div class="card">
+
+    <h2>📊 Analytics</h2>
 
     <p>
-        View and update your personal information.
+        View interview statistics, scores, performance trends and history.
     </p>
 
-    <a href="/profile" class="btn">
-        Open Profile
+    <a href="/analytics" class="btn">
+        Open Analytics
     </a>
 
 </div>
 
+<div class="card">
+
+<h2>📄 Resume Analyzer</h2>
+
+<p>
+Upload your resume and let AI analyze it.
+</p>
+
+<a href="/resume" class="btn">
+Analyze Resume
+</a>
+
 </div>
+
+</div> 
 
 <div class="logout">
 
@@ -567,22 +605,6 @@ Logout
 </div>
 
 </div>
-
-<div class="card">
-
-<h2>📄 Resume Analyzer</h2>
-
-<p>
-
-Upload your resume and let AI analyze it.
-
-</p>
-
-<a href="/resume" class="btn">
-
-Analyze Resume
-
-</a>
 
 </div>
 

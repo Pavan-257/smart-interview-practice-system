@@ -18,6 +18,10 @@ def send_otp(receiver_email, otp):
     sender_email = os.getenv("EMAIL")
     app_password = os.getenv("EMAIL_PASSWORD")
 
+    if not sender_email or not app_password:
+         raise Exception(
+        "EMAIL or EMAIL_PASSWORD not found in .env file."
+    )
     message = MIMEMultipart()
 
     message["From"] = sender_email
