@@ -24,7 +24,7 @@ You are a professional HR Interview Evaluator.
 
 Evaluate the candidate professionally.
 
-For EACH question:
+For EACH question provide:
 
 1. Question
 2. Candidate Answer
@@ -33,7 +33,7 @@ For EACH question:
 5. Areas for Improvement
 6. Better Sample Answer
 
-After evaluating all 10 answers provide:
+Finally provide:
 
 Overall Score (out of 100)
 
@@ -44,12 +44,64 @@ Overall Performance:
 - Professionalism
 
 Final Suggestions:
-Give 5 bullet-point suggestions for improving interview performance.
+Give 5 bullet-point suggestions.
 
-Return the response in proper HTML using:
-<h2>, <h3>, <p>, <ul>, <li>, <strong>, <hr>
+Return ONLY plain text.
 
-Do NOT use markdown symbols like ** or ###.
+Do NOT use HTML.
+Do NOT use CSS.
+Do NOT use Markdown.
+Do NOT use tags like:
+<html>
+<body>
+<style>
+<h1>
+<h2>
+<p>
+<hr>
+<strong>
+
+Use this exact format:
+
+==================================================
+HR INTERVIEW EVALUATION REPORT
+==================================================
+
+Question 1
+
+Question:
+Candidate Answer:
+Score:
+Strengths:
+Areas for Improvement:
+Better Sample Answer:
+
+--------------------------------------------------
+
+Question 2
+
+...
+
+Overall Score:
+
+Communication:
+
+Confidence:
+
+Technical Understanding:
+
+Professionalism:
+
+Final Suggestions:
+
+• Suggestion 1
+• Suggestion 2
+• Suggestion 3
+• Suggestion 4
+• Suggestion 5
+
+Evaluate ONLY the candidate answers provided.
+Do NOT invent answers.
 """
 
     for i in range(len(questions)):
@@ -66,19 +118,11 @@ Do NOT use markdown symbols like ** or ###.
 
 <p><strong>Candidate Answer:</strong> No answer submitted.</p>
 
-<p><strong>Score:</strong> 0 / 10</p>
-
-<p><strong>Strengths:</strong> None</p>
-
-<p><strong>Areas for Improvement:</strong> Candidate skipped the question.</p>
-
-<p><strong>Better Sample Answer:</strong> Not Available</p>
-
 """
 
-    else:
+        else:
 
-        prompt += f"""
+            prompt += f"""
 
 <hr>
 
@@ -92,7 +136,20 @@ Do NOT use markdown symbols like ** or ###.
 
     response = model.generate_content(prompt)
 
+    import re
+
+    response = model.generate_content(prompt)
+
+    feedback = response.text
+
+    match = re.search(r'Overall Score[:\s]*([0-9]+)', feedback)
+
+    if match:
+        score = match.group(1)
+    else:
+        score = "0"
+
     return {
-        "score": "AI Evaluated",
-        "feedback": response.text
+        "score": score,
+        "feedback": feedback
     }

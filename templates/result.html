@@ -1,130 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Smart Interview Result</title>
+    <title>Interview Result</title>
 
     <style>
 
         body{
             margin:0;
-            font-family:Arial, Helvetica, sans-serif;
-            background:#f4f7fb;
+            padding:40px;
+            background:#f4f6fb;
+            font-family:Arial,sans-serif;
         }
 
         .container{
-            width:90%;
-            max-width:1000px;
-            margin:40px auto;
-        }
-
-        .header{
-            background:#0d6efd;
-            color:white;
-            text-align:center;
-            padding:25px;
-            border-radius:15px;
-        }
-
-        .score-card{
-            width:250px;
-            margin:30px auto;
+            width:85%;
+            margin:auto;
             background:white;
-            text-align:center;
-            padding:25px;
-            border-radius:15px;
-            box-shadow:0 5px 20px rgba(0,0,0,0.15);
+            border-radius:12px;
+            padding:40px;
+            box-shadow:0 5px 20px rgba(0,0,0,.15);
         }
 
-        .score-card h2{
+        h1{
+            text-align:center;
+            color:#0b5ed7;
+        }
+
+        .score{
+            text-align:center;
+            font-size:45px;
+            font-weight:bold;
             color:#198754;
-            font-size:32px;
-            margin:10px 0;
+            margin:30px;
         }
 
         .feedback{
-            margin-top:30px;
-            background:white;
-            padding:30px;
-            border-radius:15px;
-            box-shadow:0 5px 20px rgba(0,0,0,0.15);
             line-height:1.8;
-            font-size:16px;
+            font-size:17px;
+            white-space:pre-wrap;
         }
 
-        .feedback h2{
-            color:#0d6efd;
-            border-bottom:2px solid #ddd;
-            padding-bottom:8px;
-        }
-
-        .feedback h3{
-            color:#198754;
-            margin-top:25px;
-        }
-
-        .feedback strong{
-            color:#000;
-        }
-
-        .feedback ul{
-            margin-left:20px;
-        }
-
-        .btn{
-            display:inline-block;
-            margin-top:30px;
-            padding:14px 30px;
-            background:#0d6efd;
-            color:white;
-            text-decoration:none;
-            border-radius:8px;
-            font-size:18px;
-        }
-
-        .btn:hover{
-            background:#084298;
-        }
-
-        .center{
+        .buttons{
             text-align:center;
+            margin-top:40px;
+        }
+
+        a{
+            text-decoration:none;
+            padding:14px 28px;
+            border-radius:8px;
+            color:white;
+            margin:10px;
+            display:inline-block;
+        }
+
+        .pdf{
+            background:#dc3545;
+        }
+
+        .home{
+            background:#0d6efd;
         }
 
     </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-    <div class="header">
-        <h1>Smart Interview Practice System</h1>
-        <h2>AI Interview Report</h2>
-    </div>
+<h1>Interview Evaluation Report</h1>
 
-    <div class="score-card">
-        <h3>Status</h3>
-        <h2>{{ score }}</h2>
-    </div>
+<div class="score">
+Score : {{ score }}/100
+</div>
 
-    <div class="feedback">
-        {{ feedback|safe }}
-    </div>
+<div class="feedback">
+{{ feedback | safe }}
+</div>
 
-<div class="center">
+<div class="buttons">
 
-{% if filename %}
-
-<a href="/download-report/{{ filename }}" class="btn">
-📄 Download PDF Report
+<a class="pdf"
+href="{{ url_for('download_report', filename=filename) }}">
+Download PDF
 </a>
 
-<br><br>
-
-{% endif %}
-
-<a href="/dashboard" class="btn">
-🏠 Back to Dashboard
+<a class="home"
+href="/dashboard">
+Back to Dashboard
 </a>
 
 </div>

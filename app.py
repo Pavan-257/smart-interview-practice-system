@@ -771,22 +771,27 @@ def hr_interview():
 
     data = interview_data[user]
 
-    # Safety check
-    if data["current"] >= len(data["questions"]):
-        del interview_data[user]
-        return redirect("/dashboard")
-
     if request.method == "POST":
 
-       answer = request.form.get("answer", "").strip()
+        answer = request.form.get("answer", "").strip()
 
-    if answer == "":
-        data["answers"].append("NO_ANSWER")
-    else:
+        if answer == "":
+            answer = "NO_ANSWER"
+
         data["answers"].append(answer)
+
         data["current"] += 1
 
-        if data["current"] >= len(data["questions"]):
+        # Interview finished
+        if data["current"] == len(data["questions"]):
+
+            print("\nQuestions:")
+            print(data["questions"])
+            
+            print()
+
+            print("\nAnswers:")
+            print(data["answers"])
 
             result = evaluate_answers(
                 data["questions"],
@@ -824,15 +829,13 @@ def hr_interview():
                 filename=f"{user}_HR_Report.pdf"
             )
 
-    if data["current"] >= len(data["questions"]):
-        return redirect("/dashboard")
-
     return render_template(
-    "hr_interview.html",
-    question=data["questions"][data["current"]],
-    number=data["current"] + 1,
-    total=len(data["questions"])
-)
+        "hr_interview.html",
+        question=data["questions"][data["current"]],
+        number=data["current"] + 1,
+        total=len(data["questions"])
+    )
+
 @app.route("/technical-interview", methods=["GET", "POST"])
 def technical_interview():
 

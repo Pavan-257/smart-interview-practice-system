@@ -2,6 +2,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.colors import darkblue
+from bs4 import BeautifulSoup
 
 
 def generate_pdf(
@@ -50,7 +51,11 @@ def generate_pdf(
     elements.append(Spacer(1, 20))
 
     elements.append(Paragraph("<b>AI Feedback</b>", heading))
-    elements.append(Paragraph(feedback, normal))
+    soup = BeautifulSoup(feedback, "html.parser")
+
+    clean_feedback = soup.get_text()
+
+    elements.append(Paragraph(clean_feedback.replace("\n", "<br/>"), normal))
 
     elements.append(Spacer(1, 20))
 
