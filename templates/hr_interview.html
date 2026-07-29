@@ -108,7 +108,9 @@ required></textarea>
 
 {% if number == total %}
 
-<button type="submit">
+<button
+    type="submit"
+    onclick="this.disabled=true; this.form.submit();">
 Submit Interview
 </button>
 

@@ -781,9 +781,10 @@ def hr_interview():
         data["answers"].append(answer)
 
         data["current"] += 1
+        print("After increment:", data["current"])
 
         # Interview finished
-        if data["current"] == len(data["questions"]):
+        if data["current"] >= len(data["questions"]):
 
             print("\nQuestions:")
             print(data["questions"])
@@ -828,6 +829,12 @@ def hr_interview():
                 feedback=result["feedback"],
                 filename=f"{user}_HR_Report.pdf"
             )
+
+        print("Current =", data["current"])
+        print("Total =", len(data["questions"]))
+
+        if data["current"] >= len(data["questions"]):
+           return redirect("/dashboard")
 
     return render_template(
         "hr_interview.html",
