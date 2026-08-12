@@ -84,19 +84,28 @@
 
     <label>Name</label>
     <input
-    type="text"
-    name="name" 
-    class="input-box" 
-    required
-    placeholder="Enter Full Name">
+        type="text"
+        name="name"
+        class="input-box"
+        required
+        minlength="2"
+        maxlength="50"
+        pattern="[A-Za-z ]+"
+        title="Name should contain only letters and spaces."
+        placeholder="Enter Full Name">
 
     <label>Mobile Number</label>
-    <input 
-    type="text" 
-    name="mobile" 
-    class="input-box" 
-    required
-    placeholder="Enter Mobile Number">
+    <input
+        type="text"
+        name="mobile"
+        class="input-box"
+        required
+        maxlength="10"
+        minlength="10"
+        pattern="[6-9][0-9]{9}"
+        inputmode="numeric"
+        title="Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
+        placeholder="Enter Mobile Number">
 
     <label>Email</label>
     <input 
@@ -116,28 +125,34 @@
            required>
 
     <label>Username</label>
-    <input 
-    type="text" 
-    name="username" 
-    class="input-box" 
-    required
-    placeholder="Create Username">
+    <input
+        type="text"
+        name="username"
+        class="input-box"
+        required
+        minlength="4"
+        maxlength="20"
+        pattern="[A-Za-z0-9_]+"
+        title="Username must contain 4-20 letters, numbers, or underscores."
+        placeholder="Create Username">
 
     <label>Password</label>
-    <input 
-    type="password" 
-    name="password" 
-    class="input-box" 
-    required 
-    placeholder="Create Password">
+    <input
+        type="password"
+        name="password"
+        class="input-box"
+        required
+        minlength="8"
+        placeholder="Create Password">
 
     <label>Confirm Password</label>
-    <input 
-    type="password" 
-    name="confirm_password" 
-    class="input-box" 
-    required 
-    placeholder="Confirm Password">
+    <input
+        type="password"
+        name="confirm_password"
+        class="input-box"
+        required
+        minlength="8"
+        placeholder="Confirm Password">
 
     <button type="submit" class="btn">
         Register

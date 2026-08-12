@@ -1,5 +1,5 @@
 import os
-
+import re
 import random
 
 from datetime import date
@@ -565,19 +565,87 @@ def register():
 
     if request.method == "POST":
 
-        name = request.form["name"]
-        mobile = request.form["mobile"]
-        email = request.form["email"]
-        age = int(request.form["age"])
-        username = request.form["username"]
-        password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
-        print("\n===== REGISTER REQUEST =====")
-        print("Name     :", name)
-        print("Mobile   :", mobile)
-        print("Email    :", email)
-        print("Username :", username)
-        print("============================\n")
+        name = request.form.get("name", "").strip()
+        mobile = request.form.get("mobile", "").strip()
+        email = request.form.get("email", "").strip()
+        age_input = request.form.get("age", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        # --------------------------------
+        # NAME VALIDATION
+        # --------------------------------
+
+        if not re.fullmatch(r"[A-Za-z ]{2,50}", name):
+            return "Invalid Name. Name should contain only letters and spaces."
+
+        # --------------------------------
+        # MOBILE NUMBER VALIDATION
+        # --------------------------------
+
+        if not re.fullmatch(r"[6-9][0-9]{9}", mobile):
+            return "Invalid Mobile Number. Enter a valid 10-digit mobile number."
+
+        # --------------------------------
+        # EMAIL VALIDATION
+        # --------------------------------
+
+        if not re.fullmatch(
+            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+            email
+        ):
+            return "Invalid Email Address."
+
+        # --------------------------------
+        # AGE VALIDATION
+        # --------------------------------
+
+        try:
+            age = int(age_input)
+        except ValueError:
+            return "Invalid Age. Please enter a valid number."
+
+        if age < 18 or age > 60:
+            return "Age must be between 18 and 60."
+
+        # --------------------------------
+        # USERNAME VALIDATION
+        # --------------------------------
+
+        if not re.fullmatch(r"[A-Za-z0-9_]{4,20}", username):
+            return "Invalid Username. Use 4-20 letters, numbers, or underscores."
+
+        # --------------------------------
+        # PASSWORD VALIDATION
+        # --------------------------------
+
+        if len(password) < 8:
+            return "Password must contain at least 8 characters."
+
+        if not re.search(r"[A-Z]", password):
+            return "Password must contain at least one uppercase letter."
+
+        if not re.search(r"[a-z]", password):
+            return "Password must contain at least one lowercase letter."
+
+        if not re.search(r"[0-9]", password):
+            return "Password must contain at least one number."
+
+        if not re.search(r"[^A-Za-z0-9]", password):
+            return "Password must contain at least one special character."
+
+        # --------------------------------
+        # CONFIRM PASSWORD
+        # --------------------------------
+
+        if password != confirm_password:
+            return "Passwords do not match."
+
+        # --------------------------------
+        # CHECK EXISTING USER
+        # --------------------------------
+
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -587,18 +655,21 @@ def register():
         )
 
         existing_user = cursor.fetchone()
-        print("Database result:", existing_user)
+
         conn.close()
 
         if existing_user:
             return "Email or Username already exists."
 
-        if age < 18 or age > 60:
-            return "Age must be between 18 and 60"
+        # --------------------------------
+        # HASH PASSWORD
+        # --------------------------------
 
-        if password != confirm_password:
-            return "Passwords do not match"
         hashed_password = generate_password_hash(password)
+
+        # --------------------------------
+        # GENERATE EMAIL OTP
+        # --------------------------------
 
         otp = generate_otp()
 
@@ -613,6 +684,10 @@ def register():
                 "password": hashed_password
             }
         }
+
+        # --------------------------------
+        # SEND EMAIL OTP
+        # --------------------------------
 
         send_otp(email, otp)
 
