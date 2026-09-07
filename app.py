@@ -239,7 +239,7 @@ def admin_dashboard():
     cursor.execute("""
     SELECT COUNT(*)
     FROM interview_results
-    WHERE DATE(interview_date)=?
+    WHERE interview_date::date=?
     """, (today,))
 
     today_interviews = cursor.fetchone()[0]
@@ -818,7 +818,7 @@ def reset_password():
         conn.commit()
         conn.close()
 
-        del forgot_password_otp[email]
+        forgot_password_otp.pop(email, None)
         session.pop("reset_email", None)
 
         return redirect("/")
@@ -1095,6 +1095,7 @@ def download_report(filename):
 
 @app.route("/logout")
 def logout():
+    session.pop("admin",None)
     session.clear()
     return redirect("/")
 
