@@ -18,7 +18,7 @@ from ai_evaluator import evaluate_answers
 from utils import generate_otp, send_otp
 from otp import otp_storage, forgot_password_otp
 from pdf_report import generate_pdf
-from resume_analyzer import extract_resume_text
+from Resume_analyzer import extract_resume_text
 from gemini_resume import analyze_resume
 from dotenv import load_dotenv
 
